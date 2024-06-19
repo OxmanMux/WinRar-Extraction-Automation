@@ -1,0 +1,44 @@
+import os
+import subprocess
+import time
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler
+
+class RarHandler(FileSystemEventHandler):
+    def on_created(self, event):
+        if event.is_directory:
+            return
+
+        if event.src_path.endswith(".rar"):
+            self.extract_rar(event.src_path)
+
+    def extract_rar(self, file_path):
+        extract_path = os.path.dirname(file_path)
+        print(f"Extracting: {file_path} to {extract_path}")
+
+        winrar_path = "C:\\Path\\To\\WinRAR\\winrar.exe"  # Replace this with the actual path to winrar.exe
+
+        try:
+            # Run the winrar extraction command
+            subprocess.run([winrar_path, "x", "-y", file_path, extract_path], check=True)
+            print(f"Extraction complete: {file_path}")
+        except Exception as e:
+            print(f"Failed to extract {file_path}: {e}")
+
+def monitor_directory(path_to_watch):
+    event_handler = RarHandler()
+    observer = Observer()
+    observer.schedule(event_handler, path_to_watch, recursive=True)
+    observer.start()
+    print(f"Watching directory: {path_to_watch}")
+
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        observer.stop()
+    observer.join()
+
+if __name__ == "__main__":
+    path_to_watch = "C:\\path\\to\\watch"  # Change this to the directory you want to monitor
+    monitor_directory(path_to_watch)
